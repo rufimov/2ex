@@ -18,10 +18,9 @@ def blast():
     NcbimakeblastdbCommandline(dbtype='nucl', input_file=f"{concat_exons.split('.')[0]}_names_corrected.fas",
                                out=concat_exons, parse_seqids=True)()
     print('Done')
-    print('Blasting %(probes)s against %(database)s' % {'probes': probes,
-                                                        'database': concat_exons})
+    print(f'Blasting {probes} against {concat_exons}')
     NcbiblastnCommandline(task=blast_task, query=probes, db=concat_exons,
-                          out=probes + '_against_' + concat_exons + '.txt',
+                          out=f'{probes}_against_{concat_exons}.txt',
                           outfmt="6 qaccver saccver pident qcovhsp evalue bitscore",
                           num_threads=4)()
     print('Done')
@@ -56,13 +55,13 @@ def split_to_exons():
             for exon in exons:
                 name = str(exon.id)
                 sequence = str(exon.seq)
-                best_exons.write('>' + probe + '_' + name + '\n' + sequence + '\n')
+                best_exons.write(f'>{probe}_{name}\n{sequence}\n')
     NcbimakeblastdbCommandline(dbtype='nucl', input_file=probes,
                                out=probes, parse_seqids=True)()
     NcbiblastnCommandline(task=blast_task, query=best_separate_exons, db=probes,
-                          out=best_separate_exons + '_against_' + probes + '.txt', num_threads=4,
+                          out=f'{best_separate_exons}_against_{probes}.txt', num_threads=4,
                           outfmt='6 qaccver saccver pident qcovhsp evalue bitscore sstart send qstart qend')()
-    with open(best_separate_exons + '_against_' + probes + '.txt') as new_blast_results:
+    with open(f'{best_separate_exons}_against_{probes}.txt') as new_blast_results:
         hits = new_blast_results.readlines()
     cleaned_hits = []
     for hit in hits:
@@ -82,7 +81,7 @@ def split_to_exons():
             hits_exons.add(cleaned_hit.split()[0])
     cleaned_dedup_hits.sort(key=lambda x: int(x.split()[0].split('-')[3].split('_')[1]))
     cleaned_dedup_hits.sort(key=lambda x: x.split()[1].split('-')[1])
-    with open(best_separate_exons + '_against_' + probes + '.txt', 'w') as new_blast_results:
+    with open(f'{best_separate_exons}_against_{probes}.txt', 'w') as new_blast_results:
         for cleaned_hit in cleaned_dedup_hits:
             new_blast_results.write(cleaned_hit)
     with open(probes) as probes_to_parse:
@@ -103,7 +102,7 @@ def split_to_exons():
                 end = int(cleaned_dedup_hit.split()[7])
                 sequence = str(probes_as_dict[name_of_locus][start - 1:end].seq)
 
-            resultfile.write('>' + name_of_locus + '_exon_' + num_exon + '\n' + sequence + '\n')
+            resultfile.write(f'>{name_of_locus}_exon_{num_exon}\n{sequence}\n')
             if int(cleaned_dedup_hit.split()[8]) > int(cleaned_dedup_hit.split()[9]):
                 start_opt = int(cleaned_dedup_hit.split()[9])
                 end_opt = int(cleaned_dedup_hit.split()[8])
@@ -112,7 +111,7 @@ def split_to_exons():
                 start_opt = int(cleaned_dedup_hit.split()[8])
                 end_opt = int(cleaned_dedup_hit.split()[9])
                 sequence_opt = str(best_exons_as_dict[name_of_exon][start_opt - 1:end_opt].seq)
-            resultfile2.write('>' + name_of_locus + '_exon_' + num_exon + '\n' + sequence_opt + '\n')
+            resultfile2.write(f'>{name_of_locus}_exon_{num_exon}\n{sequence_opt}\n')
     print('Done')
 
 
