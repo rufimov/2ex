@@ -133,9 +133,9 @@ if __name__ == "__main__":
     result_file = args.probes_separated  # final output file
     result_file2 = args.optimized_probes
     blast_task = args.blast_task  # blast task ('megablast', 'dc-megablast', 'blastn')
-    # blast()
-    # best_hits = []
-    # best_hit_search(f'{probes}_against_{concat_exons}.txt', best_hits)
+    blast()
+    best_hits = []
+    best_hit_search(f'{probes}_against_{concat_exons}.txt', best_hits)
     split_to_exons()
     for file in glob.glob('*.n*'):
         os.remove(file)
