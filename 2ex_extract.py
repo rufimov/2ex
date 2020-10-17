@@ -1,5 +1,6 @@
+#!usr/local/bin/python3
 import argparse
-import sys
+
 import gffutils
 from Bio import SeqIO
 from Bio.Alphabet import generic_dna
@@ -157,12 +158,13 @@ if __name__ == "__main__":
     parser.add_argument("command", help="command to be executed: 'build' -- to build database with genome annotations, "
                                         "'extract' -- to extract exons and create a file with predicted transcripts",
                         choices=["build", "extract"])
-    parser.add_argument("gff_file")
-    parser.add_argument("genome_fasta")
-    parser.add_argument("-e", "--exons", default='exons.fasta')
-    parser.add_argument("-c", "--concatenated", default='concatenated_exons.fasta')
+    parser.add_argument("gff_file", help="file with genome annotations in gff format")
+    parser.add_argument("genome_fasta", help="file with genome sequences in fasta format, "
+                                             "be sure that sequences in fasta and gff file are named identically")
+    parser.add_argument("-e", "--exons", default='exons.fasta', help="name of the file to write extracted exons")
+    parser.add_argument("-c", "--concatenated", default='concatenated_exons.fasta', help="name of the file "
+                                                                                         "with concatenated exons")
     args = parser.parse_args()
-
     task = args.command
     gff = args.gff_file
     fasta_file = args.genome_fasta
