@@ -32,91 +32,53 @@ def extract_exons():
             type_of_feature = gene.attributes['gene_biotype'][0]
             if type_of_feature == 'protein_coding' or type_of_feature == 'pseudogene' or type_of_feature == 'lncRNA' \
                     or type_of_feature == 'transcribed_pseudogene':
-                if type_of_feature == 'pseudogene':
-                    strand = gene.strand
-                    name = gene.attributes['Name'][0].replace('-', '_')
-                    chromosome = gene.seqid
-                    exons = []
-                    for i in feature_db.children(gene, featuretype='exon', order_by='start'):
-                        exons.append(i)
+                strand = gene.strand
+                name = gene.attributes['Name'][0].replace('-', '_')
+                chromosome = gene.seqid
+                exons = []
+                for i in feature_db.children(gene, featuretype='exon', order_by='start'):
+                    exons.append(i)
+                try:
                     exons.sort(key=lambda x: x.start)
-                    exons.sort(key=lambda x: x.attributes['gene'][0])
-                    if strand == '-':
-                        exons = exons[::-1]
-                        count = 1
-                        transcripts = set()
-                        for exon in exons:
-                            transcript = exon.attributes['gene'][0].replace('-', '_')
-                            if transcript not in transcripts:
-                                count = 1
-                                transcripts.add(transcript)
-                            start = exon.start
-                            end = exon.end
-                            sequence = str(correct_fasta_parsed[chromosome][start - 1:end].seq.reverse_complement())
-                            all_exons.write(f'>{name}-{transcript}-exon_{str(count)}-{type_of_feature}-{chromosome}\n'
-                                            f'{sequence}\n')
-                            count += 1
-                    elif strand == '+':
-                        count = 1
-                        transcripts = set()
-                        for exon in exons:
-                            transcript = exon.attributes['gene'][0].replace('-', '_')
-                            if transcript not in transcripts:
-                                count = 1
-                                transcripts.add(transcript)
-                            start = exon.start
-                            end = exon.end
-                            sequence = str(correct_fasta_parsed[chromosome][start - 1:end].seq)
-                            all_exons.write(f'>{name}-{transcript}-exon_{str(count)}-{type_of_feature}-{chromosome}\n'
-                                            f'{sequence}\n')
-                            count += 1
-                else:
-                    strand = gene.strand
-                    name = gene.attributes['Name'][0].replace('-', '_')
-                    chromosome = gene.seqid
-                    exons = []
-                    for i in feature_db.children(gene, featuretype='exon', order_by='start'):
-                        exons.append(i)
+                    exons.sort(key=lambda x: x.attributes['transcript_id'][0])
+                except KeyError:
                     exons.sort(key=lambda x: x.start)
-                    try:
-                        exons.sort(key=lambda x: x.attributes['transcript_id'][0])
-                    except KeyError:
-                        exons.sort(key=lambda x: x.attributes['orig_transcript_id'][0])
-                    if strand == '-':
-                        exons = exons[::-1]
-                        count = 1
-                        transcripts = set()
-                        for exon in exons:
-                            try:
-                                transcript = exon.attributes['transcript_id'][0].replace('-', '_')
-                            except KeyError:
-                                transcript = exon.attributes['orig_transcript_id'][0].replace('-', '_')
-                            if transcript not in transcripts:
-                                count = 1
-                                transcripts.add(transcript)
-                            start = exon.start
-                            end = exon.end
-                            sequence = str(correct_fasta_parsed[chromosome][start - 1:end].seq.reverse_complement())
-                            all_exons.write(f'>{name}-{transcript}-exon_{str(count)}-{type_of_feature}-{chromosome}\n'
-                                            f'{sequence}\n')
-                            count += 1
-                    elif strand == '+':
-                        count = 1
-                        transcripts = set()
-                        for exon in exons:
-                            try:
-                                transcript = exon.attributes['transcript_id'][0].replace('-', '_')
-                            except KeyError:
-                                transcript = exon.attributes['orig_transcript_id'][0].replace('-', '_')
-                            if transcript not in transcripts:
-                                count = 1
-                                transcripts.add(transcript)
-                            start = exon.start
-                            end = exon.end
-                            sequence = str(correct_fasta_parsed[chromosome][start - 1:end].seq)
-                            all_exons.write(f'>{name}-{transcript}-exon_{str(count)}-{type_of_feature}-{chromosome}\n'
-                                            f'{sequence}\n')
-                            count += 1
+                    exons.sort(key=lambda x: x.attributes['orig_transcript_id'][0])
+                if strand == '-':
+                    exons = exons[::-1]
+                    count = 1
+                    transcripts = set()
+                    for exon in exons:
+                        try:
+                            transcript = exon.attributes['transcript_id'][0].replace('-', '_')
+                        except KeyError:
+                            transcript = exon.attributes['orig_transcript_id'][0].replace('-', '_')
+                        if transcript not in transcripts:
+                            count = 1
+                            transcripts.add(transcript)
+                        start = exon.start
+                        end = exon.end
+                        sequence = str(correct_fasta_parsed[chromosome][start - 1:end].seq.reverse_complement())
+                        all_exons.write(f'>{name}-{transcript}-exon_{str(count)}-{type_of_feature}-{chromosome}\n'
+                                        f'{sequence}\n')
+                        count += 1
+                elif strand == '+':
+                    count = 1
+                    transcripts = set()
+                    for exon in exons:
+                        try:
+                            transcript = exon.attributes['transcript_id'][0].replace('-', '_')
+                        except KeyError:
+                            transcript = exon.attributes['orig_transcript_id'][0].replace('-', '_')
+                        if transcript not in transcripts:
+                            count = 1
+                            transcripts.add(transcript)
+                        start = exon.start
+                        end = exon.end
+                        sequence = str(correct_fasta_parsed[chromosome][start - 1:end].seq)
+                        all_exons.write(f'>{name}-{transcript}-exon_{str(count)}-{type_of_feature}-{chromosome}\n'
+                                        f'{sequence}\n')
+                        count += 1
 
 
 def concatenate():
