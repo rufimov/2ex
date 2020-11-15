@@ -115,6 +115,31 @@ def split_to_exons():
     print('Done')
 
 
+def concat_optimized():
+    with open(result_file2) as fasta_to_concatenate, \
+            open(f'{result_file2.split(".")[0]}_concatenated.{result_file2.split(".")[1]}', 'w') as concat_fasta:
+        fasta_parsed = SeqIO.to_dict(SeqIO.parse(fasta_to_concatenate, 'fasta', generic_dna))
+        current_locus = ''
+        list_of_keys = list(fasta_parsed.keys())
+        list_of_keys.sort(key=lambda x: int(x.split('-')[1].split('_')[2]))
+        list_of_keys.sort(key=lambda x: x.split('-')[1].split('_')[0])
+        count = 1
+        for key in list_of_keys:
+            locus = key.split('-')[1].split('_')[0]
+            if count == 1:
+                if locus != current_locus:
+                    concat_fasta.write('>' + key.split('-')[0] + '-' + locus + '\n' + str(fasta_parsed[key].seq))
+                else:
+                    concat_fasta.write(str(fasta_parsed[key].seq))
+            else:
+                if locus != current_locus:
+                    concat_fasta.write('\n>' + key.split('-')[0] + '-' + locus + '\n' + str(fasta_parsed[key].seq))
+                else:
+                    concat_fasta.write(str(fasta_parsed[key].seq))
+            current_locus = locus
+            count += 1
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("concatenated_exons", help="")
@@ -136,5 +161,6 @@ if __name__ == "__main__":
     best_hits = []
     best_hit_search(f'{probes}_against_{concat_exons}.txt', best_hits)
     split_to_exons()
+    concat_optimized()
     for file in glob.glob('*.n*'):
         os.remove(file)
