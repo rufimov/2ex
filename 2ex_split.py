@@ -8,21 +8,35 @@ from Bio.Alphabet import generic_dna
 from Bio.Blast.Applications import NcbimakeblastdbCommandline, NcbiblastnCommandline
 
 
+# def blast():
+#     with open(concat_exons) as concatenated:
+#         concatenated_exons = SeqIO.to_dict(SeqIO.parse(concatenated, 'fasta', generic_dna))
+#     with open(f"{concat_exons.split('.')[0]}_names_corrected.fas", 'w') as corrected:
+#         for key in concatenated_exons.keys():
+#             corrected.write(f">{key.split('-')[1]}-{key.split('-')[3]}\n{str(concatenated_exons[key].seq)}\n")
+#     print('Building database for %s...' % concat_exons)
+#     NcbimakeblastdbCommandline(dbtype='nucl', input_file=f"{concat_exons.split('.')[0]}_names_corrected.fas",
+#                                out=concat_exons, parse_seqids=True)()
+#     print('Done')
+#     print(f'Blasting {probes} against {concat_exons}')
+#     NcbiblastnCommandline(task=blast_task, query=probes, db=concat_exons,
+#                           out=f'{probes}_against_{concat_exons}.txt',
+#                           outfmt="6 qaccver saccver pident qcovhsp evalue bitscore",
+#                           num_threads=4)()
+#     print('Done')
+
 def blast():
     with open(concat_exons) as concatenated:
         concatenated_exons = SeqIO.to_dict(SeqIO.parse(concatenated, 'fasta', generic_dna))
-    with open(f"{concat_exons.split('.')[0]}_names_corrected.fas", 'w') as corrected:
-        for key in concatenated_exons.keys():
-            corrected.write(f">{key.split('-')[1]}-{key.split('-')[3]}\n{str(concatenated_exons[key].seq)}\n")
     print('Building database for %s...' % concat_exons)
-    NcbimakeblastdbCommandline(dbtype='nucl', input_file=f"{concat_exons.split('.')[0]}_names_corrected.fas",
+    NcbimakeblastdbCommandline(dbtype='nucl', input_file=concat_exons,
                                out=concat_exons, parse_seqids=True)()
     print('Done')
     print(f'Blasting {probes} against {concat_exons}')
-    NcbiblastnCommandline(task=blast_task, query=probes, db=concat_exons,
+    NcbiblastnCommandline(task=blast_task, query=probes, db=concat_exons, qcov_hsp_perc=50,
                           out=f'{probes}_against_{concat_exons}.txt',
                           outfmt="6 qaccver saccver pident qcovhsp evalue bitscore",
-                          num_threads=4)()
+                          num_threads=10)()
     print('Done')
 
 
@@ -35,11 +49,22 @@ def best_hit_search(file_with_hittable, list_with_best_hits):
     hits.sort(key=lambda x: float(x.split()[2]), reverse=True)
     hits.sort(key=lambda x: float(x.split()[3]), reverse=True)
     hits.sort(key=lambda x: x.split()[0].split('-')[1])
-    uniqe_hits = set()
+    pre_uniqe_hits = set()
+    pre_list_with_best_hits = []
     for hit in hits:
-        if hit.split()[0].split('-')[1] not in uniqe_hits:
+        if hit.split()[0].split('-')[1] not in pre_uniqe_hits:
+            pre_list_with_best_hits.append(hit)
+            pre_uniqe_hits.add(hit.split()[0].split('-')[1])
+    pre_list_with_best_hits.sort(key=lambda x: float(x.split()[5]), reverse=True)
+    pre_list_with_best_hits.sort(key=lambda x: float(x.split()[4]))
+    pre_list_with_best_hits.sort(key=lambda x: float(x.split()[2]), reverse=True)
+    pre_list_with_best_hits.sort(key=lambda x: float(x.split()[3]), reverse=True)
+    pre_list_with_best_hits.sort(key=lambda x: x.split()[1])
+    uniqe_hits = set()
+    for hit in pre_list_with_best_hits :
+        if hit.split()[1] not in uniqe_hits:
             list_with_best_hits.append(hit)
-            uniqe_hits.add(hit.split()[0].split('-')[1])
+            uniqe_hits.add(hit.split()[1])
     print('Done')
 
 
@@ -58,8 +83,8 @@ def split_to_exons():
                 best_exons.write(f'>{probe}_{name}\n{sequence}\n')
     NcbimakeblastdbCommandline(dbtype='nucl', input_file=probes,
                                out=probes, parse_seqids=True)()
-    NcbiblastnCommandline(task=blast_task, query=best_separate_exons, db=probes,
-                          out=f'{best_separate_exons}_against_{probes}.txt', num_threads=4,
+    NcbiblastnCommandline(task=blast_task, query=best_separate_exons, db=probes,qcov_hsp_perc=50,
+                          out=f'{best_separate_exons}_against_{probes}.txt', num_threads=10,
                           outfmt='6 qaccver saccver pident qcovhsp evalue bitscore sstart send qstart qend')()
     with open(f'{best_separate_exons}_against_{probes}.txt') as new_blast_results:
         hits = new_blast_results.readlines()
@@ -71,15 +96,15 @@ def split_to_exons():
     cleaned_hits.sort(key=lambda x: float(x.split()[4]))
     cleaned_hits.sort(key=lambda x: float(x.split()[2]), reverse=True)
     cleaned_hits.sort(key=lambda x: float(x.split()[3]), reverse=True)
-    cleaned_hits.sort(key=lambda x: int(x.split()[0].split('-')[3].split('_')[1]))
-    cleaned_hits.sort(key=lambda x: x.split()[0].split('-')[2])
+    cleaned_hits.sort(key=lambda x: int(x.split()[0].split('-')[2].split('_')[1]))
+    cleaned_hits.sort(key=lambda x: x.split()[0].split('-')[1])
     hits_exons = set()
     cleaned_dedup_hits = []
     for cleaned_hit in cleaned_hits:
         if cleaned_hit.split()[0] not in hits_exons:
             cleaned_dedup_hits.append(cleaned_hit)
             hits_exons.add(cleaned_hit.split()[0])
-    cleaned_dedup_hits.sort(key=lambda x: int(x.split()[0].split('-')[3].split('_')[1]))
+    cleaned_dedup_hits.sort(key=lambda x: int(x.split()[0].split('-')[2].split('_')[1]))
     cleaned_dedup_hits.sort(key=lambda x: x.split()[1].split('-')[1])
     with open(f'{best_separate_exons}_against_{probes}.txt', 'w') as new_blast_results:
         for cleaned_hit in cleaned_dedup_hits:
@@ -92,7 +117,7 @@ def split_to_exons():
         for cleaned_dedup_hit in cleaned_dedup_hits:
             name_of_locus = cleaned_dedup_hit.split()[1]
             name_of_exon = cleaned_dedup_hit.split()[0]
-            num_exon = cleaned_dedup_hit.split()[0].split('-')[3].split('_')[1]
+            num_exon = cleaned_dedup_hit.split()[0].split('-')[2].split('_')[1]
             if int(cleaned_dedup_hit.split()[6]) > int(cleaned_dedup_hit.split()[7]):
                 start = int(cleaned_dedup_hit.split()[7])
                 end = int(cleaned_dedup_hit.split()[6])
@@ -160,6 +185,10 @@ if __name__ == "__main__":
     blast()
     best_hits = []
     best_hit_search(f'{probes}_against_{concat_exons}.txt', best_hits)
+    with open(f"best_hits_{probes}_against_{concat_exons}.txt", 'w') as best_hits_file:
+        for best_hit in best_hits:
+            best_hits_file.write(best_hit)
+
     split_to_exons()
     concat_optimized()
     for file in glob.glob('*.n*'):
