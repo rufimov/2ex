@@ -1,21 +1,5 @@
 #!/usr/bin/env python3
-"""blast_pipeline.py
-
-A tidied-up, self-contained replacement for the *BLAST* stage of the exon
-pipeline.  Compared with the original script, this version
-
-* drops the deprecated *Bio.Alphabet* import,
-* uses **Pathlib**, **logging**, and type hints for clarity,
-* collapses repeated `list.sort()` chains into single `sorted(…, key=…)` calls
-  with tuple keys so the intent is obvious and stable,
-* splits work into small, testable helper functions, and
-* exposes a single CLI (`python blast_pipeline.py run …`) that reproduces the
-  old behaviour but is easier to tweak.
-
-Dependencies
-~~~~~~~~~~~~
-* Biopython ≥ 1.75
-* BLAST+ in your ``$PATH`` (``makeblastdb`` / ``blastn``)
+"""
 """
 # from __future__ import annotations
 
